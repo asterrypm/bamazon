@@ -1,103 +1,76 @@
 //required node packages
-var mysql = require("mysql");
-var inquirer = require("inquirer");
+const mysql = require("mysql");
+const inquirer = require("inquirer");
 
 //create connection information for the sql database
-var connection = mysql.createConnection ({
+const connection = mysql.createConnection ({
 	host: "localhost",
 	port: 3306,
 	user: "root",
-	password: "root"
+	password: "root",
 	database: "bamazon_DB"
 });
 
 //connect to mysql server and sql databases
-connection.connect(function(err)) {
+connection.connect(function(err) {
 	if (err) throw err;
 	//run the start function after the connection is made to prompt the user
 	start();
 });
 
-function start(){
+function start(){ 
 	//display items in products database: id's, names, and prices of products for sale
 	connection.query("SELECT * FROM products", function(err, results) {
 		if (err) throw err;
+
+		for (var i = 0; i < results.length; i++) {
+		console.log("ID:", results[i].id, "     Price", results[i].price, "     Name:", results[i].product_name);
 		//once items are displayed, prompt the user for which item they would like to buy
+		}
 		inquirer
 		.prompt([
 			{
 				name: "itemChoice",
-				type: "rawlist",
-				choices: function() {
-					var choiceArray = [];
-					for (var i = 0; i < results.length; i++) {
-						choiceArray.push(results[i].product_name);
-					}
-					return choiceArray;
-				},
+				//type: "rawlist",				
 				message: "What is the id number of the item you would like to purchase?"
 			},
 			{
 				name: "quantity",
-				type: "input"
+				//type: "input"
 				message: "How many would you like to purchase?"
-			}
+			},
 		])
 		.then(function(answer) {
-			//get the information of the chosen item
+			validateChoice(answer.itemChoice, answer.quantity);
+			
 		})
+})
+}
+function validateChoice(itemChoice, quantity) {
+	// take answer.itemChoice + answer.quantity [x]
+	// pass them as arguments [x]
+	// query our database with those arguments []
+	connection.query(`SELECT * FROM products WHERE id = ${itemChoice}`, function(err, result) {
+		if (err) throw err;
+		console.log(result[0].stock_quantity);	
+		if(result[0].stock_quantity > quantity)	{
+			console.log("There is enough in stock, proceed to update database.");
+			updateDB();
+		//UPDATE  SET stock_quantity = stock_quantity - quantity;
+		} else {
+			console.log("There is not enough left in stock, please update order");
+			start();
+		}
+   
+ });
+}
+	// verify that answer.quantity < quantity
+	// if true update database
+	// console.log('You've purchased quantity itemChoice )
+	// if false
+	// console.log('There is not enough of item in stock, would you like to order less?')
 
-
-		}])
-
-
-
-	})
-
-
+function updateDB() {
+ console.log('synchronicity checks out');
 }
 
-//using customer input, check if there is enough in stock to fulfill order
-
-//If not app should state "Insufficient quantity" - and prevent order from going through.
-
-//If the store does have enough of the product, fulfill customer order
-
-
-
-
-// var chosenItem;
-//         for (var i = 0; i < results.length; i++) {
-//           if (results[i].item_name === answer.choice) {
-//             chosenItem = results[i];
-//           }
-//         }
-
-//         // determine if bid was high enough
-//         if (chosenItem.highest_bid < parseInt(answer.bid)) {
-//           // bid was high enough, so update db, let the user know, and start over
-//           connection.query(
-//             "UPDATE auctions SET ? WHERE ?",
-//             [
-//               {
-//                 highest_bid: answer.bid
-//               },
-//               {
-//                 id: chosenItem.id
-//               }
-//             ],
-//             function(error) {
-//               if (error) throw err;
-//               console.log("Bid placed successfully!");
-//               start();
-//             }
-//           );
-//         }
-//         else {
-//           // bid wasn't high enough, so apologize and start over
-//           console.log("Your bid was too low. Try again...");
-//           start();
-//         }
-//       });
-//   });
-// }
